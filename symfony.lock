@@ -40,6 +40,9 @@
             "./tests/bootstrap.php"
         ]
     },
+    "swouters/sql-migrations-bundle": {
+        "version": "1.0.3"
+    },
     "symfony/asset-mapper": {
         "version": "6.4",
         "recipe": {
