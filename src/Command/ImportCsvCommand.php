@@ -43,20 +43,11 @@ class ImportCsvCommand extends Command
     }
 
     /**
-     * Verify if the insee has 15 digit and if the calcul equals to the key.
+     * Verify if the insee has 5 digit.
      */
     private function isValidInsee(string $insee): bool
     {
-        if (!preg_match('/^\d{15}$/', $insee)) {
-            return false;
-        }
-
-        $core = substr($insee, 0, 13);
-        $key = (int) substr($insee, -2);
-
-        $calculatedKey = 97 - ($core % 97);
-
-        return ($key === $calculatedKey);
+        return preg_match('/^\d{5}$/', $insee);
     }
 
     function isValidPhone(string $phone): bool
