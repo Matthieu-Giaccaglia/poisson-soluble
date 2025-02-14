@@ -46,7 +46,7 @@ class ImportCsvCommand extends Command
         $this
             ->setHelp('This command allows you to import a CSV file that have "insee" and "telephone" columns.')
             ->addArgument('path', InputArgument::REQUIRED, 'The path of the CSV file.')
-            ->addOption('separator', 'sep', InputOption::VALUE_REQUIRED, 'CSV separator, by default ";"', ';');
+            ->addOption('separator', 'sep', InputOption::VALUE_REQUIRED, 'CSV separator.', ';');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -89,7 +89,7 @@ class ImportCsvCommand extends Command
     private function getCsvData(string $path, string $separator = ';'): false|array
     {
 
-        $handle = fopen($path, "r+");
+        $handle = fopen($path, 'r+');
         if ($handle === FALSE) {
             return false;
         }
