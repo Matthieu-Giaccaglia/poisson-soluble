@@ -18,12 +18,14 @@ use Symfony\Component\Console\Output\OutputInterface;
 class ImportCsvCommand extends Command
 {
 
+    /** @var array{success:int,error:int,affected_rows:int[]} */
     private array $report = [
         'success' => 0,
         'error' => 0,
         'affected_rows' => [],
     ];
 
+    /** @var string[] */
     private array $validHeaders = ['insee', 'telephone'];
 
     private function isValidHeader(string $header): bool
@@ -49,7 +51,7 @@ class ImportCsvCommand extends Command
             ->addOption('separator', 'sep', InputOption::VALUE_REQUIRED, 'CSV separator.', ';');
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
 
         $path = $input->getArgument('path');
@@ -73,7 +75,7 @@ class ImportCsvCommand extends Command
         return Command::SUCCESS;
     }
 
-    private function isValidCsv(string $path)
+    private function isValidCsv(string $path): bool
     {
         if (!file_exists($path)) {
             return false;
@@ -86,6 +88,12 @@ class ImportCsvCommand extends Command
         return true;
     }
 
+    /**
+     * @param string $path
+     * @param string $separator
+     * 
+     * @return array<array{insee:string,telephone:string}>
+     */
     private function getCsvData(string $path, string $separator = ';'): false|array
     {
 
