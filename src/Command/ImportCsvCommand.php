@@ -61,10 +61,14 @@ class ImportCsvCommand extends Command
         }
 
         $data = $this->getCsvData($path, $separator);
-        if (!$data) {
+        if (!$data && !is_array($data)) {
             $output->writeln('Your file cannot be opened.');
             return Command::FAILURE;
         }
+
+        $output->writeln('Nb. Data inserted  : ' . $this->report['success']);
+        $output->writeln('Nb. Data failure   : ' . $this->report['error']);
+        $output->writeln('Rows lines failure : ' . join(',', $this->report['affected_rows']));
 
         return Command::SUCCESS;
     }
@@ -85,62 +89,55 @@ class ImportCsvCommand extends Command
     private function getCsvData(string $path, string $separator = ';'): false|array
     {
 
-        // $handle = fopen($path, "r");
-        $fileContents = file_get_contents($path, true);
-        $csvData = str_getcsv($fileContents, $separator);
-
-        $returnData = [];
-
-        foreach ($csvData as $i => $rowString) {
-            var_dump($rowString);
+        $handle = fopen($path, "r+");
+        if ($handle === FALSE) {
+            return false;
         }
 
-
-        // if ($handle === FALSE) {
-        //     return false;
-        // }
-
-        $csvData = [];
+        $returnData = [];
         $headers = [];
         $lineNumber = 0;
-        
-        // while ($data = fgetcsv($handle, null, $separator)) {
-        //     if ($lineNumber == 0) {
-        //         $headers = $data;
-        //         continue;
-        //     }
 
-        //     $rowData = [];
-        //     foreach ($data as $i => $cellData) {
+        while ($rowData = fgetcsv($handle, null, $separator)) {
 
-        //         $header = $headers[$i];
-        //         if (!$this->isValidHeader($header)) {
-        //             continue;
-        //         }
+            if ($lineNumber == 0) {
+                $headers = $rowData;
+                $lineNumber++;
+                continue;
+            }
 
-        //         if ($header == 'insee' && !$this->isValidInsee($cellData)) {
-        //             $this->report['error']++;
-        //             break;
-        //         }
+            $rowReturnData = [];
+            foreach ($rowData as $i => $cellData) {
 
-        //         if ($header == 'telephone' && !$this->isValidPhone($cellData)) {
-        //             $this->report['error']++;
-        //             break;
-        //         }
+                $header = $headers[$i];
+                if (!$this->isValidHeader($header)) {
+                    continue;
+                }
 
-        //         $rowData[$header] = $cellData;
-        //     }
+                if ($header == 'insee' && !$this->isValidInsee($cellData)) {
+                    $this->report['error']++;
+                    break;
+                }
 
-        //     if (count($rowData) == 2) {
-        //         $csvData[] = $rowData;
-        //     } else {
-        //         $this->report['affected_rows'][] = $lineNumber;
-        //     }
+                if ($header == 'telephone' && !$this->isValidPhone($cellData)) {
+                    $this->report['error']++;
+                    break;
+                }
 
-        //     $lineNumber++;
-        // }
+                $rowReturnData[$header] = $cellData;
+            }
 
-        // fclose($handle);
-        return $csvData;
+            if (count($rowReturnData) == 2) {
+                $returnData[] = $rowReturnData;
+                $this->report['success']++;
+            } else {
+                $this->report['affected_rows'][] = $lineNumber;
+            }
+
+            $lineNumber++;
+        }
+
+        fclose($handle);
+        return $returnData;
     }
 }
