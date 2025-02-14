@@ -2,6 +2,8 @@
 
 namespace App\Command;
 
+use Doctrine\DBAL\Connection;
+use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -18,24 +20,43 @@ use Symfony\Component\Console\Output\OutputInterface;
 class ImportCsvCommand extends Command
 {
 
-    /** @var array{success:int,error:int,affected_rows:int[]} */
+    /** @var array{success:int,failure:array<int,string>} */
     private array $report = [
         'success' => 0,
-        'error' => 0,
-        'affected_rows' => [],
+        'failure' => [],
     ];
+
+    private Connection $db;
 
     /** @var string[] */
     private array $validHeaders = ['insee', 'telephone'];
+
+    public function __construct(Connection $connection)
+    {
+        parent::__construct();
+        $this->db = $connection;
+    }
 
     private function isValidHeader(string $header): bool
     {
         return in_array($header, $this->validHeaders);
     }
 
+    /**
+     * Verify if the insee has 15 digit and if the calcul equals to the key.
+     */
     private function isValidInsee(string $insee): bool
     {
-        return preg_match('/^\d{13}(\d{2})?$/', $insee);
+        if (!preg_match('/^\d{15}$/', $insee)) {
+            return false;
+        }
+
+        $core = substr($insee, 0, 13);
+        $key = (int) substr($insee, -2);
+
+        $calculatedKey = 97 - ($core % 97);
+
+        return ($key === $calculatedKey);
     }
 
     function isValidPhone(string $phone): bool
@@ -48,7 +69,8 @@ class ImportCsvCommand extends Command
         $this
             ->setHelp('This command allows you to import a CSV file that have "insee" and "telephone" columns.')
             ->addArgument('path', InputArgument::REQUIRED, 'The path of the CSV file.')
-            ->addOption('separator', 'sep', InputOption::VALUE_REQUIRED, 'CSV separator.', ';');
+            ->addOption('separator', 'sep', InputOption::VALUE_REQUIRED, 'CSV separator.', ';')
+            ->addOption('error-detail', 'err', InputOption::VALUE_NONE, 'To see wich line is ignored and why');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -56,21 +78,31 @@ class ImportCsvCommand extends Command
 
         $path = $input->getArgument('path');
         $separator = $input->getOption('separator');
+        $errorDetail = $input->getOption('error-detail');
 
         if (!$this->isValidCsv($path)) {
             $output->writeln('Your file is not a valid CSV.');
             return Command::FAILURE;
         }
 
-        $data = $this->getCsvData($path, $separator);
-        if (!$data && !is_array($data)) {
+        $data = $this->insertData($path, $separator);
+        if (!$data) {
             $output->writeln('Your file cannot be opened.');
             return Command::FAILURE;
         }
 
+
+        if ($errorDetail) {
+            $output->writeln('ERROR DETAIL');
+            foreach ($this->report['failure'] as $lineNumber => $error) {
+                $output->writeln(' - ' . $lineNumber . ' : ' . $error);
+            }
+            $output->writeln('------------------------');
+        }
+
+
         $output->writeln('Nb. Data inserted  : ' . $this->report['success']);
-        $output->writeln('Nb. Data failure   : ' . $this->report['error']);
-        $output->writeln('Rows lines failure : ' . join(',', $this->report['affected_rows']));
+        $output->writeln('Nb. Data failure   : ' . count($this->report['failure']));
 
         return Command::SUCCESS;
     }
@@ -91,20 +123,20 @@ class ImportCsvCommand extends Command
     /**
      * @param string $path
      * @param string $separator
-     * 
-     * @return array<array{insee:string,telephone:string}>
      */
-    private function getCsvData(string $path, string $separator = ';'): false|array
+    private function insertData(string $path, string $separator = ';'): bool
     {
+
+        $builder = $this->db->createQueryBuilder();
 
         $handle = fopen($path, 'r+');
         if ($handle === FALSE) {
             return false;
         }
 
-        $returnData = [];
         $headers = [];
         $lineNumber = 0;
+        $sqlRows = [];
 
         while ($rowData = fgetcsv($handle, null, $separator)) {
 
@@ -114,7 +146,7 @@ class ImportCsvCommand extends Command
                 continue;
             }
 
-            $rowReturnData = [];
+            $insertData = [];
             foreach ($rowData as $i => $cellData) {
 
                 $header = $headers[$i];
@@ -123,29 +155,41 @@ class ImportCsvCommand extends Command
                 }
 
                 if ($header == 'insee' && !$this->isValidInsee($cellData)) {
-                    $this->report['error']++;
+                    $this->report['failure'][$lineNumber] = 'Invalid Insee';
                     break;
                 }
 
                 if ($header == 'telephone' && !$this->isValidPhone($cellData)) {
-                    $this->report['error']++;
+                    $this->report['failure'][$lineNumber] = 'Invalid Telephone';
                     break;
                 }
 
-                $rowReturnData[$header] = $cellData;
+                $insertData[$header] = $cellData;
             }
 
-            if (count($rowReturnData) == 2) {
-                $returnData[] = $rowReturnData;
-                $this->report['success']++;
-            } else {
-                $this->report['affected_rows'][] = $lineNumber;
+            if (count($insertData) == 2) {
+                try {
+                    $builder->insert('recipient')
+                        ->values(['insee' => '?', 'telephone' => '?'])
+                        ->setParameters([0 => $insertData['insee'], 1 => $insertData['telephone']])
+                        ->executeStatement();
+
+                    $this->report['success']++;
+                } catch (Exception $e) {
+                    $code = $e?->getPrevious()?->getPrevious()?->getCode() ?? null;
+
+                    if ($code == '23505') {
+                        $this->report['failure'][$lineNumber] = 'Couple insee + telephone already exists';
+                    } else {
+                        $this->report['failure'][$lineNumber] = 'Server Error';
+                    }
+                }
             }
 
             $lineNumber++;
         }
 
         fclose($handle);
-        return $returnData;
+        return true;
     }
 }

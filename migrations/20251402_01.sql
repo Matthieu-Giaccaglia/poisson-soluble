@@ -1,5 +1,6 @@
 CREATE TABLE recipient (
     id SERIAL PRIMARY KEY,
-    insee VARCHAR(13) NOT NULL,
-    phone VARCHAR(10) NOT NULL
+    insee VARCHAR(15) NOT NULL,
+    telephone VARCHAR(10) NOT NULL,
+    UNIQUE (insee, telephone)
 );
