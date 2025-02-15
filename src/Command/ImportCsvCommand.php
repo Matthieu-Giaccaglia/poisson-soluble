@@ -2,6 +2,7 @@
 
 namespace App\Command;
 
+use App\Service\HelperService;
 use Doctrine\DBAL\Connection;
 use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
@@ -27,32 +28,21 @@ class ImportCsvCommand extends Command
     ];
 
     private Connection $db;
+    private HelperService $helper;
 
     /** @var string[] */
     private array $validHeaders = ['insee', 'telephone'];
 
-    public function __construct(Connection $connection)
+    public function __construct(Connection $connection, HelperService $helper)
     {
         parent::__construct();
         $this->db = $connection;
+        $this->helper = $helper;
     }
 
     private function isValidHeader(string $header): bool
     {
         return in_array($header, $this->validHeaders);
-    }
-
-    /**
-     * Verify if the insee has 5 digit.
-     */
-    private function isValidInsee(string $insee): bool
-    {
-        return preg_match('/^\d{5}$/', $insee);
-    }
-
-    function isValidPhone(string $phone): bool
-    {
-        return preg_match('/^0[1-9]\d{8}$/', $phone);
     }
 
     protected function configure(): void
@@ -145,12 +135,12 @@ class ImportCsvCommand extends Command
                     continue;
                 }
 
-                if ($header == 'insee' && !$this->isValidInsee($cellData)) {
+                if ($header == 'insee' && !$this->helper->isValidInsee($cellData)) {
                     $this->report['failure'][$lineNumber] = 'Invalid Insee';
                     break;
                 }
 
-                if ($header == 'telephone' && !$this->isValidPhone($cellData)) {
+                if ($header == 'telephone' && !$this->helper->isValidPhone($cellData)) {
                     $this->report['failure'][$lineNumber] = 'Invalid Telephone';
                     break;
                 }
