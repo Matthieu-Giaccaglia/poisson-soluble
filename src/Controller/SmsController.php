@@ -2,36 +2,31 @@
 
 namespace App\Controller;
 
+use App\Message\SmsMessage;
 use App\Service\HelperService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use App\Service\SmsService;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 class SmsController extends AbstractController
 {
-    private SmsService $smsService;
     private Connection $db;
     private HelperService $helper;
     private LoggerInterface $logger;
 
-    public function __construct(
-        SmsService $smsService,
-        Connection $connection,
-        HelperService $helper,
-        LoggerInterface $logger
-    ) {
-        $this->smsService = $smsService;
+    public function __construct(Connection $connection, HelperService $helper, LoggerInterface $logger)
+    {
         $this->db = $connection;
         $this->helper = $helper;
         $this->logger = $logger;
     }
 
     #[Route('alerter', name: 'sms_alerter', methods: ['GET'])]
-    public function alerter(): Response
+    public function alerter(MessageBusInterface $bus): Response
     {
 
         $this->logger->info('API alerter used.');
@@ -59,7 +54,7 @@ class SmsController extends AbstractController
             ->fetchAllAssociative();
 
         foreach ($recipients as $recipient) {
-            $this->smsService->sendSms($recipient['telephone'], $message);
+            $bus->dispatch(new SmsMessage($recipient['telephone'], $message));
         }
 
         return new JsonResponse(['success' => true, 'result' => 'Message send !']);
