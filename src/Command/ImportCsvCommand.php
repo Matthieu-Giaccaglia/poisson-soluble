@@ -74,11 +74,15 @@ class ImportCsvCommand extends Command
 
         $data = $this->insertData($path, $separator);
         if (!$data) {
-            $output->writeln('Your file cannot be opened.');
-            $this->logger->error('CSV cannot be opened.');
+            if (isset($this->report['failure'][0])) {
+                $output->writeln($this->report['failure'][0]);
+            } else {
+                $output->writeln('CSV File cannot be opened.');
+                $this->logger->error('The file has a problem.');
+            }
+
             return Command::FAILURE;
         }
-
 
         if ($errorDetail) {
             $output->writeln('ERROR DETAIL');
@@ -124,12 +128,19 @@ class ImportCsvCommand extends Command
 
         $headers = [];
         $lineNumber = 0;
-        $sqlRows = [];
 
         while ($rowData = fgetcsv($handle, null, $separator, '"', '\\')) {
 
             if ($lineNumber == 0) {
                 $headers = $rowData;
+
+                if (array_diff($this->validHeaders, $headers)) {
+                    $this->report['failure'][$lineNumber] = 'Invalid headers in CSV file';
+                    fclose($handle);
+                    return false;
+                }
+
+
                 $lineNumber++;
                 continue;
             }
