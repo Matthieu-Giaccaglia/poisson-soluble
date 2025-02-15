@@ -58,8 +58,10 @@ php bin/console sql-migrations:execute --dry-run
 ## Importer un fichier CSV
 
 Le CSV devra obligatoirement avoir les colonnes "insee" et "telephone". Un fichier d'exemple est disponible ([insee_telephone.csv](./csv_file/insee_telephone.csv)).
-La commande pour importer le fichier
+Le numéro de téléphone ne devra pas avoir d'espace, exemple : 0601020304 ou +33601020304.
+Le numéro INSEE devra être composé de 5 chiffres.
 
+La commande pour importer le fichier :
 ```console
 php bin/console app:import-csv [CSV_PATH] --error-detail --separator=[CSV_SEPARATOR]
 ```

@@ -6,11 +6,19 @@ namespace App\Service;
 class HelperService
 {
     
-    public function isValidPhone($phone): bool
+    /**
+     * Valid a french phone number like : 
+     *  - 0601020304
+     *  - +33601020304
+     */
+    public function isValidPhone(string $phone): bool
     {
-        return preg_match('/^0[1-9]\d{8}$/', $phone);
+        return preg_match('/^(?:(?:\+)33|0)[1-9]\d{8}$/', $phone);
     }
 
+    /**
+     * Valid a city insee code.
+     */
     public function isValidInsee(string $insee): bool
     {
         return preg_match('/^\d{5}$/', $insee);
