@@ -4,7 +4,9 @@ namespace App\Command;
 
 use App\Service\HelperService;
 use Doctrine\DBAL\Connection;
+use Error;
 use Exception;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -29,15 +31,17 @@ class ImportCsvCommand extends Command
 
     private Connection $db;
     private HelperService $helper;
+    private LoggerInterface $logger;
 
     /** @var string[] */
     private array $validHeaders = ['insee', 'telephone'];
 
-    public function __construct(Connection $connection, HelperService $helper)
+    public function __construct(Connection $connection, HelperService $helper, LoggerInterface $logger)
     {
         parent::__construct();
         $this->db = $connection;
         $this->helper = $helper;
+        $this->logger = $logger;
     }
 
     private function isValidHeader(string $header): bool
@@ -56,6 +60,7 @@ class ImportCsvCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $this->logger->info('Running command to import csv.');
 
         $path = $input->getArgument('path');
         $separator = $input->getOption('separator');
@@ -63,12 +68,14 @@ class ImportCsvCommand extends Command
 
         if (!$this->isValidCsv($path)) {
             $output->writeln('Your file is not a valid CSV.');
+            $this->logger->error('CSV file not valid.');
             return Command::FAILURE;
         }
 
         $data = $this->insertData($path, $separator);
         if (!$data) {
             $output->writeln('Your file cannot be opened.');
+            $this->logger->error('CSV cannot be opened.');
             return Command::FAILURE;
         }
 
@@ -119,7 +126,7 @@ class ImportCsvCommand extends Command
         $lineNumber = 0;
         $sqlRows = [];
 
-        while ($rowData = fgetcsv($handle, null, $separator)) {
+        while ($rowData = fgetcsv($handle, null, $separator, '"', '\\')) {
 
             if ($lineNumber == 0) {
                 $headers = $rowData;
@@ -163,6 +170,7 @@ class ImportCsvCommand extends Command
                         $this->report['failure'][$lineNumber] = 'Couple insee + telephone already exists';
                     } else {
                         $this->report['failure'][$lineNumber] = 'Server Error';
+                        $this->logger->critical($e);
                     }
                 }
             }
