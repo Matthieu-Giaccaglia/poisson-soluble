@@ -61,6 +61,7 @@ class SmsController extends AbstractController
             $bus->dispatch(new SmsMessage($recipient['telephone'], $message));
         }
 
+        //
         return new JsonResponse(['success' => true, 'result' => 'Message send !']);
     }
 }
