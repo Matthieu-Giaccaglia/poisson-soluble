@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Attribute\ApiKeyRequired;
 use App\Message\SmsMessage;
+use App\Security\ApiKeySecurity;
 use App\Service\HelperService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -11,6 +13,8 @@ use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
 
 class SmsController extends AbstractController
 {
@@ -35,15 +39,15 @@ class SmsController extends AbstractController
         $message = $_GET['message'] ?? null;
 
         if (is_null($insee)) {
-            return new JsonResponse(['success' => false, 'error' => "Missing insee parameter in url"], 422);
+            return new JsonResponse(['success' => false, 'error' => "Missing insee parameter in url"], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         if (!$this->helper->isValidInsee($insee)) {
-            return new JsonResponse(['success' => false, 'error' => 'Invalid Insee'], 422);
+            return new JsonResponse(['success' => false, 'error' => 'Invalid Insee'], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         if (is_null($message)) {
-            return new JsonResponse(['success' => false, 'error' => "Missing message parameter in url"], 422);
+            return new JsonResponse(['success' => false, 'error' => "Missing message parameter in url"], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $recipients = $this->db->createQueryBuilder()
