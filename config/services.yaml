@@ -21,9 +21,10 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    App\Security\ApiKeySecurity:
+    App\Security\ApiKeyAuthenticator:
         arguments:
-            $validApiKey: '%api_key%'
+            $apiKey: '%api_key%'
+
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

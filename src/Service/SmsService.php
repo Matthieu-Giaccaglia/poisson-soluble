@@ -17,7 +17,12 @@ class SmsService
 
     public function sendSms(string $phoneNumber, string $message): bool
     {
-        $this->logger->info((new DateTime('now'))->format('Y-m-d H:i:s') . ' | ' . $phoneNumber . ' : ' . $message);
+        $this->logger->info('{date} : Send SMS to {phoneNumber} with content {message}.', [
+            'date' => (new DateTime('now'))->format('Y-m-d H:i:s'),
+            'phoneNumber' => $phoneNumber,
+            'message' => $message,
+        ]);
+
         return true;
     }
 }

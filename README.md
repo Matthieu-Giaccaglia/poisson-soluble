@@ -72,5 +72,5 @@ php bin/console app:import-csv [CSV_PATH] --error-detail --separator=[CSV_SEPARA
 ## Alerter les destinataires
 
 Il est possible d'alerter les destinataires ayant le même numéro INSEE.
-Pour cela il faut lancer l'api "[YOUR_URL]/alerter?insee=[INSEE]&message=[MESSAGE]" en GET uniquement, et ajouter l'entête "X-API-KEY" qui contiendra la clé d'api.
+Pour cela il faut lancer l'api "[YOUR_URL]/api/alerter?insee=[INSEE]&message=[MESSAGE]" en GET uniquement, et ajouter l'entête "X-API-KEY" qui contiendra la clé d'api.
 Les logs des envois des sms sont présents dans ./var/cache/*.log.

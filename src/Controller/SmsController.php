@@ -2,9 +2,7 @@
 
 namespace App\Controller;
 
-use App\Attribute\ApiKeyRequired;
 use App\Message\SmsMessage;
-use App\Security\ApiKeySecurity;
 use App\Service\HelperService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -14,9 +12,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-use function Symfony\Component\DependencyInjection\Loader\Configurator\env;
-
-class SmsController extends AbstractController
+class SmsController extends AbstractController implements ApiKeyRequiredController
 {
     private Connection $db;
     private HelperService $helper;
@@ -29,7 +25,7 @@ class SmsController extends AbstractController
         $this->logger = $logger;
     }
 
-    #[Route('alerter', name: 'sms_alerter', methods: ['GET'])]
+    #[Route('api/alerter', name: 'sms_alerter', methods: ['GET'])]
     public function alerter(MessageBusInterface $bus): Response
     {
 

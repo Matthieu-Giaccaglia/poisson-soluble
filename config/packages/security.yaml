@@ -6,9 +6,17 @@ security:
     providers:
         users_in_memory: { memory: null }
     firewalls:
+
+        api:
+            pattern: ^/api/ # Applique ce firewall aux routes /api/*
+            stateless: true
+            custom_authenticators:
+                - App\Security\ApiKeyAuthenticator
+
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
+
         main:
             lazy: true
             provider: users_in_memory
