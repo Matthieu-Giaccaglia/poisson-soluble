@@ -13,12 +13,12 @@ class SmsMessage
         $this->message = $message;
     }
 
-    public function getPhonenumber()
+    public function getPhonenumber(): string
     {
         return $this->phonenumber;
     }
 
-    public function getMessage()
+    public function getMessage(): string
     {
         return $this->message;
     }

@@ -9,14 +9,14 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler()]
 class SmsHandler
 {
-    private $smsService;
+    private SmsService $smsService;
 
     public function __construct(SmsService $smsService)
     {
         $this->smsService = $smsService;
     }
 
-    public function __invoke(SmsMessage $message)
+    public function __invoke(SmsMessage $message): void
     {
         $phoneNumber = $message->getPhoneNumber();
         $message = $message->getMessage();

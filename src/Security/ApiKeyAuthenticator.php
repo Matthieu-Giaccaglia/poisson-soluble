@@ -34,9 +34,16 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
             throw new AuthenticationException('Invalid API Key');
         }
 
+        // Anonyme class to simulate a User.
         return new SelfValidatingPassport(new UserBadge($apiKey, fn() => new class implements UserInterface {
-            public function getRoles(): array { return ['ROLE_USER'];}
-            public function eraseCredentials() {}
+            public function getRoles(): array
+            {
+                return ['ROLE_USER'];
+            }
+            public function eraseCredentials(): void
+            {
+                return;
+            }
             public function getUserIdentifier(): string
             {
                 return (string) '';
@@ -46,11 +53,17 @@ class ApiKeyAuthenticator extends AbstractAuthenticator
 
     public function onAuthenticationFailure(Request $request, AuthenticationException $exception): JsonResponse
     {
-        return new JsonResponse(['error' => 'Unauthorized', 'message' => $exception->getMessage()], JsonResponse::HTTP_UNAUTHORIZED);
+        return new JsonResponse([
+            'error' => 'Unauthorized',
+            'message' => $exception->getMessage()
+        ], JsonResponse::HTTP_UNAUTHORIZED);
     }
 
-    public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?JsonResponse
-    {
+    public function onAuthenticationSuccess(
+        Request $request,
+        TokenInterface $token,
+        string $firewallName
+    ): ?JsonResponse {
         return null;
     }
 }

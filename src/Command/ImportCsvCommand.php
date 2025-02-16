@@ -22,7 +22,6 @@ use Symfony\Component\Console\Output\OutputInterface;
 )]
 class ImportCsvCommand extends Command
 {
-
     /** @var array{success:int,failure:array<int,string>} */
     private array $report = [
         'success' => 0,
@@ -44,7 +43,7 @@ class ImportCsvCommand extends Command
         $this->logger = $logger;
     }
 
-    private function isValidHeader(string $header): bool
+    private function isValidHeader(?string $header): bool
     {
         return in_array($header, $this->validHeaders);
     }
@@ -122,7 +121,7 @@ class ImportCsvCommand extends Command
         $builder = $this->db->createQueryBuilder();
 
         $handle = fopen($path, 'r+');
-        if ($handle === FALSE) {
+        if ($handle === false) {
             return false;
         }
 
@@ -130,7 +129,6 @@ class ImportCsvCommand extends Command
         $lineNumber = 0;
 
         while ($rowData = fgetcsv($handle, null, $separator, '"', '\\')) {
-
             if ($lineNumber == 0) {
                 $headers = $rowData;
 
@@ -147,7 +145,6 @@ class ImportCsvCommand extends Command
 
             $insertData = [];
             foreach ($rowData as $i => $cellData) {
-
                 $header = $headers[$i];
                 if (!$this->isValidHeader($header)) {
                     continue;
@@ -175,7 +172,7 @@ class ImportCsvCommand extends Command
 
                     $this->report['success']++;
                 } catch (Exception $e) {
-                    $code = $e?->getPrevious()?->getPrevious()?->getCode() ?? null;
+                    $code = $e->getPrevious()?->getPrevious()?->getCode() ?? null;
 
                     if ($code == '23505') {
                         $this->report['failure'][$lineNumber] = 'Couple insee + telephone already exists';

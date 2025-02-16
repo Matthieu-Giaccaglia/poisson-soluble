@@ -12,7 +12,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-class SmsController extends AbstractController implements ApiKeyRequiredController
+class SmsController extends AbstractController
 {
     private Connection $db;
     private HelperService $helper;
@@ -35,15 +35,24 @@ class SmsController extends AbstractController implements ApiKeyRequiredControll
         $message = $_GET['message'] ?? null;
 
         if (is_null($insee)) {
-            return new JsonResponse(['success' => false, 'error' => "Missing insee parameter in url"], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
+            return new JsonResponse([
+                'success' => false,
+                'error' => "Missing insee parameter in url"
+            ], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         if (!$this->helper->isValidInsee($insee)) {
-            return new JsonResponse(['success' => false, 'error' => 'Invalid Insee'], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Invalid Insee'
+            ], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         if (is_null($message)) {
-            return new JsonResponse(['success' => false, 'error' => "Missing message parameter in url"], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
+            return new JsonResponse([
+                'success' => false,
+                'error' => "Missing message parameter in url"
+            ], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         $recipients = $this->db->createQueryBuilder()

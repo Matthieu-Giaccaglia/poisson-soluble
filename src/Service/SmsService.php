@@ -7,7 +7,6 @@ use Psr\Log\LoggerInterface;
 
 class SmsService
 {
-
     private LoggerInterface $logger;
 
     public function __construct(LoggerInterface $logger)
